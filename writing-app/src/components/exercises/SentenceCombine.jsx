@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { POINTS } from '../../data/exercises'
 import './Exercise.css'
 
-export default function SentenceCombine({ exercise, onAnswer, answered }) {
+export default function SentenceCombine({ exercise, onAnswer }) {
   const [userText, setUserText] = useState('')
   const [showExample, setShowExample] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [selfScore, setSelfScore] = useState(null)
 
-  const { instruction, sentences, hint, exampleAnswer, concept } = exercise
+  const { instruction, sentences, hint, exampleAnswer } = exercise
 
   const wordCount = userText.trim().split(/\s+/).filter(Boolean).length
 

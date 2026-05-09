@@ -108,19 +108,19 @@ export default function Session({ exercises, onComplete, onExit }) {
         <span className="points-label">+{POINTS[current.type]} XP</span>
       </div>
 
-      {/* Exercise content */}
+      {/* Exercise content — key on exercise id forces fresh state for each exercise */}
       <div className="exercise-container">
         {current.type === 'grammarFix' && (
-          <GrammarFix exercise={current} onAnswer={handleAnswer} answered={answered} />
+          <GrammarFix key={current.id} exercise={current} onAnswer={handleAnswer} />
         )}
         {current.type === 'wordChoice' && (
-          <WordChoice exercise={current} onAnswer={handleAnswer} answered={answered} />
+          <WordChoice key={current.id} exercise={current} onAnswer={handleAnswer} />
         )}
         {current.type === 'sentenceCombine' && (
-          <SentenceCombine exercise={current} onAnswer={handleAnswer} answered={answered} />
+          <SentenceCombine key={current.id} exercise={current} onAnswer={handleAnswer} />
         )}
         {current.type === 'writingPrompt' && (
-          <WritingPrompt exercise={current} onAnswer={handleAnswer} answered={answered} />
+          <WritingPrompt key={current.id} exercise={current} onAnswer={handleAnswer} />
         )}
       </div>
 

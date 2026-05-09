@@ -10,15 +10,17 @@ const WRITING_TIPS = [
   'Strong verbs do more work than adverb-verb pairs. "She insisted" beats "she said strongly."',
 ]
 
-export default function WritingPrompt({ exercise, onAnswer, answered }) {
+export default function WritingPrompt({ exercise, onAnswer }) {
   const [text, setText] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const { instruction, prompt, tip, minWords } = exercise
+  const [craftTip] = useState(
+    () => WRITING_TIPS[Math.floor(Math.random() * WRITING_TIPS.length)]
+  )
 
   const words = text.trim().split(/\s+/).filter(Boolean)
   const wordCount = words.length
   const meetsMinimum = wordCount >= minWords
-  const randomTip = WRITING_TIPS[Math.floor(Math.random() * WRITING_TIPS.length)]
 
   const handleSubmit = () => {
     if (!meetsMinimum) return
@@ -82,7 +84,7 @@ export default function WritingPrompt({ exercise, onAnswer, answered }) {
           </p>
           <div className="craft-tip">
             <span className="craft-tip-label">Craft tip to consider next time:</span>
-            <span className="craft-tip-text">{randomTip}</span>
+            <span className="craft-tip-text">{craftTip}</span>
           </div>
         </div>
       )}

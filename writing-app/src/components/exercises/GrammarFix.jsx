@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { POINTS } from '../../data/exercises'
 import './Exercise.css'
 
-export default function GrammarFix({ exercise, onAnswer, answered }) {
+export default function GrammarFix({ exercise, onAnswer }) {
   const [selected, setSelected] = useState(null)
   const [submitted, setSubmitted] = useState(false)
 
