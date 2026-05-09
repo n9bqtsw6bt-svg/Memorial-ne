@@ -1,0 +1,134 @@
+.session {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 16px 48px;
+  min-height: 100dvh;
+}
+
+/* Top bar */
+.session-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+
+.exit-btn {
+  background: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.exit-btn:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.session-progress-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.session-timer {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  transition: color 0.3s;
+}
+
+.session-timer.warn {
+  color: var(--amber);
+}
+
+.session-timer.danger {
+  color: var(--red);
+}
+
+/* Progress bar */
+.session-progress-track {
+  height: 4px;
+  background: var(--border);
+  margin-bottom: 24px;
+}
+
+.session-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), #60a5fa);
+  transition: width 0.4s ease;
+}
+
+/* Exercise type row */
+.exercise-type-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.type-badge {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.type-badge.grammar  { background: var(--blue-light); color: var(--blue); }
+.type-badge.word     { background: var(--purple-light); color: var(--purple); }
+.type-badge.sentence { background: var(--teal-light); color: var(--teal); }
+.type-badge.prompt   { background: var(--amber-light); color: var(--amber); }
+
+.concept-label {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.points-label {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green);
+  background: var(--green-light);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+/* Exercise container */
+.exercise-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 20px;
+  box-shadow: var(--shadow);
+}
+
+/* Next button */
+.next-row {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.next-btn {
+  background: var(--blue);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 12px 24px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+}
+
+.next-btn:hover {
+  background: var(--blue-dark);
+  box-shadow: var(--shadow-lg);
+}
