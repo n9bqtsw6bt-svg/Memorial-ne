@@ -1,0 +1,214 @@
+.results {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 32px 16px 48px;
+}
+
+.results-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Score hero */
+.score-hero {
+  text-align: center;
+  padding: 28px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.score-emoji {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.score-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.xp-earned {
+  margin-top: 8px;
+  display: inline-block;
+  background: var(--green-light);
+  color: var(--green);
+  font-size: 16px;
+  font-weight: 700;
+  padding: 6px 18px;
+  border-radius: 999px;
+}
+
+/* Result stats */
+.result-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 400px) {
+  .result-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.result-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 10px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.rs-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+.rs-max {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.rs-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-top: 3px;
+}
+
+/* Score bar */
+.score-bar-wrapper {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.score-bar-track {
+  height: 10px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.score-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), #60a5fa);
+  border-radius: 999px;
+  transition: width 0.8s ease;
+}
+
+.score-bar-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+/* Breakdown */
+.breakdown-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.breakdown-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.br-badge {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.br-badge.grammar  { background: var(--blue-light); color: var(--blue); }
+.br-badge.word     { background: var(--purple-light); color: var(--purple); }
+.br-badge.sentence { background: var(--teal-light); color: var(--teal); }
+.br-badge.prompt   { background: var(--amber-light); color: var(--amber); }
+
+.br-concept {
+  font-size: 14px;
+  color: var(--text-muted);
+  flex: 1;
+}
+
+.br-score {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.br-correct   { background: var(--green-light); color: var(--green); }
+.br-incorrect { background: var(--red-light); color: var(--red); }
+.br-neutral   { background: var(--blue-light); color: var(--blue); }
+
+/* Total XP */
+.total-xp-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  color: #fff;
+}
+
+.total-xp-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #93c5fd;
+}
+
+.total-xp-value {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+/* Continue button */
+.continue-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+}
+
+.continue-btn:hover {
+  background: var(--blue-dark);
+  box-shadow: var(--shadow-lg);
+}
