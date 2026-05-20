@@ -5,9 +5,10 @@ import {
 } from '../utils/asaCalculator.js';
 import {
   getPreopRequirements, isReadyForEvaluation, AVAILABLE_ITEMS_SCHEMA,
+  getMedicationWarnings, getLabAlerts,
 } from '../utils/preopRequirements.js';
 
-const STEPS = ['Patient Info', 'Medical History', 'Medications & Allergies', 'Available Studies'];
+const STEPS = ['Patient & Surgery', 'Medical History', 'Medications & History', 'Available Studies'];
 
 const MEDICATIONS = [
   { key: 'warfarin', label: 'Warfarin (Coumadin)' },
@@ -33,11 +34,12 @@ const MEDICATIONS = [
   { key: 'ssri_snri', label: 'SSRI / SNRI' },
   { key: 'lithium', label: 'Lithium' },
   { key: 'inhaler', label: 'Inhaler(s) — bronchodilator / steroid inhaler' },
-  { key: 'cpap', label: 'CPAP / BIPAP (uses at home)' },
+  { key: 'cpap', label: 'CPAP / BiPAP (uses at home)' },
 ];
 
 function initForm() {
   return {
+    // Step 1
     name: '',
     dob: '',
     age: '',
@@ -48,17 +50,30 @@ function initForm() {
     surgeryType: '',
     surgeryRisk: '',
     anesthesiaType: '',
+    npoStatus: '',
+    orDate: '',
+    orTime: '',
+    surgeonName: '',
+    // Step 2
     conditions: [],
+    functionalStatus: 'unknown',
+    difficultIntubation: false,
+    mhRisk: false,
+    // Step 3
     medications: [],
     otherMedications: '',
     drugAllergies: '',
     latexAllergy: false,
-    npoStatus: '',
-    lastAteTime: '',
+    ponvHistory: false,
+    priorAnesProblems: '',
     notes: '',
+    // Step 4
     availableItems: {},
+    labValues: { hgb: '', kplus: '', creatinine: '', inr: '', hba1c: '' },
   };
 }
+
+const SEVERITY_ICON = { critical: '🚨', high: '⚠', moderate: '⚡', low: 'ℹ', info: 'ℹ' };
 
 export default function NurseIntake({ onSubmit, onCancel }) {
   const [step, setStep] = useState(0);
@@ -79,13 +94,29 @@ export default function NurseIntake({ onSubmit, onCancel }) {
   const surgeryRisk = selectedSurgery?.risk || form.surgeryRisk || '';
 
   const preopReqs = useMemo(
-    () => getPreopRequirements(form.conditions, surgeryRisk, asaResult.level),
-    [form.conditions, surgeryRisk, asaResult.level]
+    () => getPreopRequirements(form.conditions, surgeryRisk, asaResult.level, form.functionalStatus),
+    [form.conditions, surgeryRisk, asaResult.level, form.functionalStatus]
   );
+
+  const medWarnings = useMemo(
+    () => getMedicationWarnings(form.medications),
+    [form.medications]
+  );
+
+  const labAlerts = useMemo(
+    () => getLabAlerts(form.labValues),
+    [form.labValues]
+  );
+
+  const isEmergency = form.surgeryType?.includes('Emergency');
 
   function set(field, value) {
     setForm(f => ({ ...f, [field]: value }));
     setErrors(e => ({ ...e, [field]: undefined }));
+  }
+
+  function setLabValue(key, value) {
+    setForm(f => ({ ...f, labValues: { ...f.labValues, [key]: value } }));
   }
 
   function toggleCondition(key) {
@@ -131,7 +162,9 @@ export default function NurseIntake({ onSubmit, onCancel }) {
   }
 
   function handleSubmit() {
-    const evalNeeded = needsEvaluation(asaResult, surgeryRisk);
+    const evalNeeded = needsEvaluation(asaResult, surgeryRisk)
+      || form.difficultIntubation
+      || form.mhRisk;
     const ready = evalNeeded ? isReadyForEvaluation(preopReqs, form.availableItems) : false;
 
     onSubmit({
@@ -146,9 +179,8 @@ export default function NurseIntake({ onSubmit, onCancel }) {
     });
   }
 
-  const surgeryRiskDisplay = surgeryRisk ? (
-    <span className={`risk-chip risk-${surgeryRisk} inline`}>{surgeryRisk} risk</span>
-  ) : null;
+  const criticalWarnings = medWarnings.filter(w => w.severity === 'critical');
+  const hasSafetyFlags = form.difficultIntubation || form.mhRisk || criticalWarnings.length > 0;
 
   return (
     <div className="intake-container">
@@ -156,14 +188,17 @@ export default function NurseIntake({ onSubmit, onCancel }) {
         <button className="btn-ghost" onClick={onCancel}>← Back</button>
         <h2 className="intake-title">New Patient Intake</h2>
         <div className="asa-live">
-          {form.age || form.conditions.length > 0 ? (
+          {(form.age || form.conditions.length > 0) && (
             <>
-              <span className="asa-live-label">Current ASA</span>
+              <span className="asa-live-label">ASA</span>
               <span className="asa-badge" style={{ background: ASA_COLORS[asaResult.level] }}>
                 {asaResult.level}
               </span>
             </>
-          ) : null}
+          )}
+          {hasSafetyFlags && (
+            <span className="safety-live-flag" title="Safety flags present">🚨</span>
+          )}
         </div>
       </div>
 
@@ -182,6 +217,7 @@ export default function NurseIntake({ onSubmit, onCancel }) {
       </div>
 
       <div className="intake-body">
+
         {/* ── STEP 0: Patient Info ─────────────────────────────── */}
         {step === 0 && (
           <div className="step-content">
@@ -206,8 +242,7 @@ export default function NurseIntake({ onSubmit, onCancel }) {
                   type="number"
                   value={form.age}
                   onChange={e => set('age', e.target.value)}
-                  min="1" max="120"
-                  placeholder="Years"
+                  min="1" max="120" placeholder="Years"
                 />
                 {errors.age && <span className="error-msg">{errors.age}</span>}
               </div>
@@ -293,7 +328,31 @@ export default function NurseIntake({ onSubmit, onCancel }) {
                   ))}
                 </select>
                 {errors.surgeryType && <span className="error-msg">{errors.surgeryType}</span>}
-                {surgeryRiskDisplay && <div className="field-hint">{surgeryRiskDisplay}</div>}
+                {surgeryRisk && (
+                  <div className="field-hint">
+                    <span className={`risk-chip risk-${surgeryRisk} inline`}>{surgeryRisk} risk</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label>OR Date</label>
+                <input type="date" value={form.orDate} onChange={e => set('orDate', e.target.value)} />
+              </div>
+
+              <div className="form-group">
+                <label>OR Time</label>
+                <input type="time" value={form.orTime} onChange={e => set('orTime', e.target.value)} />
+              </div>
+
+              <div className="form-group span-2">
+                <label>Surgeon</label>
+                <input
+                  type="text"
+                  value={form.surgeonName}
+                  onChange={e => set('surgeonName', e.target.value)}
+                  placeholder="Surgeon's name"
+                />
               </div>
 
               <div className="form-group">
@@ -315,11 +374,18 @@ export default function NurseIntake({ onSubmit, onCancel }) {
                   <option>NPO since midnight</option>
                   <option>NPO — 8+ hours</option>
                   <option>NPO — 6 hours (light meal)</option>
-                  <option>NPO — 2 hours (clear liquids)</option>
+                  <option>NPO — 2 hours (clear liquids only)</option>
                   <option>Not NPO — emergency</option>
                 </select>
               </div>
             </div>
+
+            {isEmergency && (
+              <div className="emergency-intake-banner">
+                🚨 <strong>Emergency Surgery</strong> — Anesthesiologist notification required immediately.
+                Full pre-op workup may not be possible. Escalate to attending anesthesiologist now.
+              </div>
+            )}
           </div>
         )}
 
@@ -327,7 +393,7 @@ export default function NurseIntake({ onSubmit, onCancel }) {
         {step === 1 && (
           <div className="step-content">
             <h3 className="step-title">Medical History</h3>
-            <p className="step-note">Check all that apply. The ASA score updates live.</p>
+            <p className="step-note">Check all that apply. ASA score updates live as you select conditions.</p>
 
             {CONDITION_GROUPS.map(group => (
               <div key={group.system} className="condition-group">
@@ -338,7 +404,7 @@ export default function NurseIntake({ onSubmit, onCancel }) {
                     return (
                       <label
                         key={cond.key}
-                        className={`condition-item ${checked ? 'checked' : ''} asa-${cond.asa}`}
+                        className={`condition-item ${checked ? 'checked' : ''}`}
                       >
                         <input
                           type="checkbox"
@@ -346,13 +412,58 @@ export default function NurseIntake({ onSubmit, onCancel }) {
                           onChange={() => toggleCondition(cond.key)}
                         />
                         <span className="cond-label-text">{cond.label}</span>
-                        <span className={`cond-asa-dot asa-color-${cond.asa}`} title={`ASA ${cond.asa}`} />
+                        <span className={`cond-asa-dot asa-color-${cond.asa}`} title={`ASA ${cond.asa} condition`} />
                       </label>
                     );
                   })}
                 </div>
               </div>
             ))}
+
+            {/* Functional Status */}
+            <div className="condition-group">
+              <div className="condition-group-title">Functional Capacity</div>
+              <div className="form-group">
+                <label>Estimated functional status (affects cardiac risk stratification)</label>
+                <select
+                  value={form.functionalStatus}
+                  onChange={e => set('functionalStatus', e.target.value)}
+                  className="func-status-select"
+                >
+                  <option value="unknown">Unknown / not assessed</option>
+                  <option value=">=4">≥4 METs — Can climb a flight of stairs or walk at 4 mph without symptoms</option>
+                  <option value="<4">{"<4 METs — Gets short of breath or chest symptoms with mild exertion"}</option>
+                  <option value="sedentary">Severely limited — Cannot walk 1–2 blocks or perform light housework</option>
+                </select>
+              </div>
+            </div>
+
+            {/* CRITICAL SAFETY FLAGS */}
+            <div className="safety-flags-section">
+              <div className="safety-flags-title">⚠ Critical Safety Flags — Check if applicable</div>
+              <label className={`safety-item ${form.difficultIntubation ? 'flagged' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={form.difficultIntubation}
+                  onChange={e => set('difficultIntubation', e.target.checked)}
+                />
+                <div className="safety-item-content">
+                  <strong>History of difficult intubation or difficult airway</strong>
+                  <span> — prior cannot-intubate / cannot-ventilate, required awake fiberoptic, emergency surgical airway, or documented difficult laryngoscopy</span>
+                </div>
+              </label>
+              <label className={`safety-item ${form.mhRisk ? 'flagged' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={form.mhRisk}
+                  onChange={e => set('mhRisk', e.target.checked)}
+                />
+                <div className="safety-item-content">
+                  <strong>Malignant hyperthermia (MH) risk</strong>
+                  <span> — personal or family history of MH, MH-like reaction, or unexpected death under anesthesia</span>
+                </div>
+              </label>
+            </div>
 
             {asaResult.factors.length > 0 && (
               <div className="asa-summary-box">
@@ -372,34 +483,58 @@ export default function NurseIntake({ onSubmit, onCancel }) {
           </div>
         )}
 
-        {/* ── STEP 2: Medications & Allergies ─────────────────── */}
+        {/* ── STEP 2: Medications & Anesthesia History ─────────── */}
         {step === 2 && (
           <div className="step-content">
-            <h3 className="step-title">Medications &amp; Allergies</h3>
-            <p className="step-note">Check medications anesthesia must be aware of.</p>
+            <h3 className="step-title">Medications &amp; Anesthesia History</h3>
+            <p className="step-note">Check medications anesthesia must be aware of. Warnings appear automatically.</p>
 
             <div className="med-grid">
               {MEDICATIONS.map(med => {
                 const checked = form.medications.includes(med.key);
+                const hasWarning = medWarnings.some(w => w.key === med.key ||
+                  (med.key === 'warfarin' && w.key === 'anticoag') ||
+                  (med.key === 'apixaban' && w.key === 'anticoag') ||
+                  (med.key === 'rivaroxaban' && w.key === 'anticoag') ||
+                  (med.key === 'dabigatran' && w.key === 'anticoag') ||
+                  (med.key === 'heparin_enox' && w.key === 'anticoag'));
                 return (
-                  <label key={med.key} className={`med-item ${checked ? 'checked' : ''}`}>
+                  <label key={med.key} className={`med-item ${checked ? 'checked' : ''} ${hasWarning && checked ? 'has-warning' : ''}`}>
                     <input
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleMed(med.key)}
                     />
                     <span>{med.label}</span>
+                    {hasWarning && checked && <span className="med-flag">⚠</span>}
                   </label>
                 );
               })}
             </div>
+
+            {/* Medication warnings */}
+            {medWarnings.length > 0 && (
+              <div className="med-warnings-box">
+                <div className="med-warnings-title">Medication Alerts — Action Required</div>
+                {medWarnings.map(w => (
+                  <div key={w.key} className={`warning-banner severity-${w.severity}`}>
+                    <div className="warning-icon">{SEVERITY_ICON[w.severity]}</div>
+                    <div className="warning-body">
+                      <div className="warning-med">{w.med}</div>
+                      <div className="warning-text">{w.text}</div>
+                      <div className="warning-action">→ {w.action}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="form-group mt-4">
               <label>Other Medications (free text)</label>
               <textarea
                 value={form.otherMedications}
                 onChange={e => set('otherMedications', e.target.value)}
-                rows={3}
+                rows={2}
                 placeholder="List any other medications not shown above…"
               />
             </div>
@@ -409,15 +544,14 @@ export default function NurseIntake({ onSubmit, onCancel }) {
 
             <div className="form-grid">
               <div className="form-group span-2">
-                <label>Drug Allergies (list with reactions)</label>
+                <label>Drug Allergies (list drug and reaction type)</label>
                 <textarea
                   value={form.drugAllergies}
                   onChange={e => set('drugAllergies', e.target.value)}
                   rows={2}
-                  placeholder="e.g., Penicillin — hives; Codeine — nausea / vomiting"
+                  placeholder="e.g., Penicillin — hives; Sulfa — rash; Codeine — nausea/vomiting; Morphine — anaphylaxis"
                 />
               </div>
-
               <div className="form-group">
                 <label className="checkbox-label">
                   <input
@@ -431,13 +565,34 @@ export default function NurseIntake({ onSubmit, onCancel }) {
             </div>
 
             <div className="form-divider" />
+            <h4 className="subsection-title">Prior Anesthesia History</h4>
+
+            <label className={`anes-hist-item ${form.ponvHistory ? 'checked' : ''}`}>
+              <input
+                type="checkbox"
+                checked={form.ponvHistory}
+                onChange={e => set('ponvHistory', e.target.checked)}
+              />
+              <span>Significant postoperative nausea / vomiting (PONV) history</span>
+            </label>
+
+            <div className="form-group mt-4">
+              <label>Anesthesia problems or special notes (from prior records or patient report)</label>
+              <textarea
+                value={form.priorAnesProblems}
+                onChange={e => set('priorAnesProblems', e.target.value)}
+                rows={2}
+                placeholder="e.g., 'Difficult mask ventilation 2019', 'Required awake fiberoptic intubation', 'Reaction to propofol', 'Family member died under anesthesia'"
+              />
+            </div>
+
             <div className="form-group">
               <label>Additional Notes for Anesthesiologist</label>
               <textarea
                 value={form.notes}
                 onChange={e => set('notes', e.target.value)}
-                rows={3}
-                placeholder="Difficult IV access, previous anesthesia problems, patient concerns, etc."
+                rows={2}
+                placeholder="Difficult IV access, patient concerns, interpreter needed, etc."
               />
             </div>
           </div>
@@ -448,52 +603,90 @@ export default function NurseIntake({ onSubmit, onCancel }) {
           <div className="step-content">
             <h3 className="step-title">Available Studies &amp; Clearances</h3>
             <p className="step-note">
-              Check everything already in the chart. Missing <strong>required</strong> items will be flagged.
+              Check what is already in the chart. Missing <strong>required</strong> items are flagged.
             </p>
 
-            {preopReqs.length === 0 && (
+            {preopReqs.length === 0 ? (
               <div className="info-box">
-                No specific pre-op requirements identified based on this patient&apos;s conditions. Standard nursing pre-op protocol applies.
+                No specific pre-op requirements identified. Standard nursing pre-op protocol applies.
               </div>
+            ) : (
+              ['Labs', 'Tests', 'Clearances'].map(cat => {
+                const schema = AVAILABLE_ITEMS_SCHEMA[cat.toLowerCase()];
+                const relevant = preopReqs.filter(r => r.category === cat);
+                if (relevant.length === 0) return null;
+
+                return (
+                  <div key={cat} className="available-section">
+                    <div className="available-section-title">{cat}</div>
+                    {relevant.map(req => {
+                      const avail = form.availableItems[req.key];
+                      const schemaItem = schema?.find(s => s.key === req.key);
+                      return (
+                        <label
+                          key={req.key}
+                          className={`available-item ${avail ? 'available' : ''} priority-${req.priority}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={!!avail}
+                            onChange={() => toggleAvailable(req.key)}
+                          />
+                          <div className="available-item-info">
+                            <span className="available-item-label">
+                              {schemaItem?.label || req.label}
+                              {req.priority === 'required' && <span className="req-star"> *</span>}
+                            </span>
+                            <span className="available-item-reason">{req.reason}</span>
+                          </div>
+                          <span className={`avail-status ${avail ? 'yes' : 'no'}`}>
+                            {avail ? '✓ In chart' : 'Not yet'}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                );
+              })
             )}
 
-            {['Labs', 'Tests', 'Clearances'].map(cat => {
-              const schema = AVAILABLE_ITEMS_SCHEMA[cat.toLowerCase()];
-              const relevant = preopReqs.filter(r => r.category === cat);
-              if (relevant.length === 0) return null;
+            {/* Key Lab Values */}
+            <div className="form-divider" />
+            <h4 className="subsection-title">Key Lab Values</h4>
+            <p className="step-note small">Enter values for automatic critical-value flagging.</p>
 
-              return (
-                <div key={cat} className="available-section">
-                  <div className="available-section-title">{cat}</div>
-                  {relevant.map(req => {
-                    const avail = form.availableItems[req.key];
-                    const schemaItem = schema?.find(s => s.key === req.key);
-                    return (
-                      <label
-                        key={req.key}
-                        className={`available-item ${avail ? 'available' : ''} priority-${req.priority}`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={!!avail}
-                          onChange={() => toggleAvailable(req.key)}
-                        />
-                        <div className="available-item-info">
-                          <span className="available-item-label">
-                            {schemaItem?.label || req.label}
-                            {req.priority === 'required' && <span className="req-star">*</span>}
-                          </span>
-                          <span className="available-item-reason">{req.reason}</span>
-                        </div>
-                        <span className={`avail-status ${avail ? 'yes' : 'no'}`}>
-                          {avail ? '✓ In chart' : 'Not yet'}
-                        </span>
-                      </label>
-                    );
-                  })}
+            <div className="lab-values-grid">
+              {[
+                { key: 'hgb', label: 'Hemoglobin', unit: 'g/dL', placeholder: '12.5', step: '0.1', max: '25' },
+                { key: 'kplus', label: 'Potassium (K+)', unit: 'mEq/L', placeholder: '4.2', step: '0.1', max: '10' },
+                { key: 'creatinine', label: 'Creatinine', unit: 'mg/dL', placeholder: '1.1', step: '0.1', max: '30' },
+                { key: 'inr', label: 'INR', unit: '', placeholder: '1.1', step: '0.01', max: '20' },
+                { key: 'hba1c', label: 'HbA1c', unit: '%', placeholder: '7.2', step: '0.1', max: '20' },
+              ].map(lv => (
+                <div key={lv.key} className="lab-value-item">
+                  <label>{lv.label} {lv.unit && <span className="lab-unit">{lv.unit}</span>}</label>
+                  <input
+                    type="number"
+                    step={lv.step}
+                    min="0"
+                    max={lv.max}
+                    value={form.labValues[lv.key]}
+                    onChange={e => setLabValue(lv.key, e.target.value)}
+                    placeholder={lv.placeholder}
+                  />
                 </div>
-              );
-            })}
+              ))}
+            </div>
+
+            {labAlerts.length > 0 && (
+              <div className="lab-alerts-preview">
+                {labAlerts.map(a => (
+                  <div key={a.key} className={`lab-alert-preview severity-${a.severity}`}>
+                    {SEVERITY_ICON[a.severity]} {a.text}
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="intake-preview-box">
               <div className="preview-asa">
@@ -502,8 +695,8 @@ export default function NurseIntake({ onSubmit, onCancel }) {
                   ASA {asaResult.level}
                 </span>
               </div>
-              <div className={`preview-triage ${needsEvaluation(asaResult, surgeryRisk) ? 'needs-eval' : 'no-eval'}`}>
-                {needsEvaluation(asaResult, surgeryRisk)
+              <div className={`preview-triage ${(needsEvaluation(asaResult, surgeryRisk) || form.difficultIntubation || form.mhRisk) ? 'needs-eval' : 'no-eval'}`}>
+                {(needsEvaluation(asaResult, surgeryRisk) || form.difficultIntubation || form.mhRisk)
                   ? 'Anesthesiologist evaluation required'
                   : 'No anesthesiologist evaluation required'}
               </div>
@@ -512,7 +705,7 @@ export default function NurseIntake({ onSubmit, onCancel }) {
         )}
       </div>
 
-      {/* Footer navigation */}
+      {/* Footer */}
       <div className="intake-footer">
         {step > 0 ? (
           <button className="btn-secondary" onClick={() => setStep(s => s - 1)}>← Back</button>
@@ -526,7 +719,7 @@ export default function NurseIntake({ onSubmit, onCancel }) {
           <button className="btn-primary" onClick={nextStep}>Next →</button>
         ) : (
           <button className="btn-submit" onClick={handleSubmit}>
-            Save Patient &amp; Generate Triage
+            Save &amp; Generate Triage
           </button>
         )}
       </div>

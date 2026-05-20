@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage.js';
+import { getPreopRequirements, isReadyForEvaluation } from './utils/preopRequirements.js';
 import Navigation from './components/Navigation.jsx';
 import NurseDashboard from './components/NurseDashboard.jsx';
 import NurseIntake from './components/NurseIntake.jsx';
@@ -8,9 +9,9 @@ import AnesthesiologistDashboard from './components/AnesthesiologistDashboard.js
 
 export default function App() {
   const [patients, setPatients] = useLocalStorage('asa-triage-patients', []);
-  const [view, setView] = useState('nurse-dashboard'); // nurse-dashboard | intake | result | anesthesiologist
+  const [view, setView] = useState('nurse-dashboard');
   const [selectedPatientId, setSelectedPatientId] = useState(null);
-  const [userRole, setUserRole] = useState('nurse'); // nurse | anesthesiologist
+  const [userRole, setUserRole] = useState('nurse');
 
   const handleAddPatient = useCallback((patientData) => {
     const id = `pt-${Date.now()}`;
@@ -21,14 +22,27 @@ export default function App() {
   }, [setPatients]);
 
   const handleUpdateAvailable = useCallback((patientId, availableItems) => {
-    setPatients(prev => prev.map(p =>
-      p.id === patientId ? { ...p, availableItems } : p
-    ));
+    setPatients(prev => prev.map(p => {
+      if (p.id !== patientId) return p;
+      const preopReqs = getPreopRequirements(
+        p.conditions || [], p.surgeryRisk, p.asaLevel, p.functionalStatus
+      );
+      const ready = p.needsEvaluation ? isReadyForEvaluation(preopReqs, availableItems) : false;
+      return { ...p, availableItems, isReadyForEval: ready };
+    }));
   }, [setPatients]);
 
   const handleMarkEvaluated = useCallback((patientId) => {
     setPatients(prev => prev.map(p =>
-      p.id === patientId ? { ...p, evaluationComplete: true, evaluatedAt: new Date().toISOString() } : p
+      p.id === patientId
+        ? { ...p, evaluationComplete: true, evaluatedAt: new Date().toISOString() }
+        : p
+    ));
+  }, [setPatients]);
+
+  const handleUpdateAnesNotes = useCallback((patientId, anesNotes) => {
+    setPatients(prev => prev.map(p =>
+      p.id === patientId ? { ...p, anesNotes } : p
     ));
   }, [setPatients]);
 
@@ -45,6 +59,8 @@ export default function App() {
     setUserRole(role);
     setView(role === 'nurse' ? 'nurse-dashboard' : 'anesthesiologist');
   };
+
+  const pendingCount = patients.filter(p => p.needsEvaluation && !p.evaluationComplete).length;
 
   const renderView = () => {
     switch (view) {
@@ -71,6 +87,7 @@ export default function App() {
             onBack={() => setView(userRole === 'nurse' ? 'nurse-dashboard' : 'anesthesiologist')}
             onUpdateAvailable={handleUpdateAvailable}
             onMarkEvaluated={handleMarkEvaluated}
+            onUpdateAnesNotes={handleUpdateAnesNotes}
             userRole={userRole}
           />
         ) : null;
@@ -94,7 +111,7 @@ export default function App() {
         onRoleSwitch={handleRoleSwitch}
         activeView={view}
         onNavigate={setView}
-        patientCount={patients.filter(p => !p.evaluationComplete && p.needsEvaluation).length}
+        patientCount={pendingCount}
       />
       <main className="main-content">
         {renderView()}
