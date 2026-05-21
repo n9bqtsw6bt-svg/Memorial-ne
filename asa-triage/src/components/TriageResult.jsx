@@ -4,7 +4,7 @@ import {
 } from '../utils/asaCalculator.js';
 import {
   getPreopRequirements, isReadyForEvaluation, AVAILABLE_ITEMS_SCHEMA,
-  getMedicationWarnings, getLabAlerts,
+  getMedicationWarnings, getLabAlerts, medLabel,
 } from '../utils/preopRequirements.js';
 
 const SEVERITY_ICON = { critical: '🚨', high: '⚠', moderate: '⚡', low: 'ℹ', info: 'ℹ' };
@@ -244,7 +244,7 @@ export default function TriageResult({ patient, onBack, onUpdateAvailable, onMar
           <h3 className="section-title">Medications &amp; Allergies</h3>
           {patient.medications?.length > 0 ? (
             <ul className="med-list">
-              {patient.medications.map(m => <li key={m}>{m}</li>)}
+              {patient.medications.map(m => <li key={m}>{medLabel(m)}</li>)}
             </ul>
           ) : <p className="none-text">None documented</p>}
           {patient.otherMedications && <p className="other-meds">{patient.otherMedications}</p>}

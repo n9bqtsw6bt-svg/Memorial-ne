@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ASA_COLORS, ASA_DESCRIPTIONS } from '../utils/asaCalculator.js';
-import { getPreopRequirements, isReadyForEvaluation, getMedicationWarnings } from '../utils/preopRequirements.js';
+import { getPreopRequirements, isReadyForEvaluation, getMedicationWarnings, medLabel } from '../utils/preopRequirements.js';
 
 function formatORTime(orDate, orTime) {
   if (!orDate) return null;
@@ -271,7 +271,7 @@ function EvalCard({ patient: p, onSelect, onMarkEvaluated }) {
               <div className="detail-section-title">Medications &amp; Allergies</div>
               {p.medications?.length > 0 ? (
                 <ul className="detail-list">
-                  {p.medications.map(m => <li key={m}>{m}</li>)}
+                  {p.medications.map(m => <li key={m}>{medLabel(m)}</li>)}
                 </ul>
               ) : <p className="none-text">None documented</p>}
               {p.otherMedications && <p className="other-meds">{p.otherMedications}</p>}

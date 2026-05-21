@@ -1,5 +1,37 @@
 // Pre-operative requirements per ASA Practice Advisory (2012) and ACC/AHA Perioperative Guidelines
 
+// Shared medication list — keys used by warning logic, labels used for display
+export const MEDICATIONS = [
+  { key: 'warfarin',        label: 'Warfarin (Coumadin)' },
+  { key: 'apixaban',        label: 'Apixaban (Eliquis)' },
+  { key: 'rivaroxaban',     label: 'Rivaroxaban (Xarelto)' },
+  { key: 'dabigatran',      label: 'Dabigatran (Pradaxa)' },
+  { key: 'heparin_enox',    label: 'Heparin / Enoxaparin (Lovenox)' },
+  { key: 'aspirin',         label: 'Aspirin' },
+  { key: 'clopidogrel',     label: 'Clopidogrel (Plavix)' },
+  { key: 'ticagrelor',      label: 'Ticagrelor (Brilinta)' },
+  { key: 'insulin',         label: 'Insulin' },
+  { key: 'metformin',       label: 'Metformin' },
+  { key: 'sglt2',           label: 'SGLT-2 inhibitor (Farxiga, Jardiance, Invokana)' },
+  { key: 'glp1',            label: 'GLP-1 agonist (Ozempic, Wegovy, Victoza, Mounjaro)' },
+  { key: 'beta_blocker',    label: 'Beta-blocker' },
+  { key: 'ace_arb',         label: 'ACE inhibitor / ARB' },
+  { key: 'digoxin',         label: 'Digoxin' },
+  { key: 'amiodarone',      label: 'Amiodarone' },
+  { key: 'steroids',        label: 'Chronic steroids (prednisone, etc.)' },
+  { key: 'immunosuppressant',label: 'Immunosuppressants (tacrolimus, cyclosporine, etc.)' },
+  { key: 'opioids',         label: 'Opioids (hydrocodone, oxycodone, morphine, etc.)' },
+  { key: 'maoi',            label: 'MAOI antidepressant' },
+  { key: 'ssri_snri',       label: 'SSRI / SNRI' },
+  { key: 'lithium',         label: 'Lithium' },
+  { key: 'inhaler',         label: 'Inhaler(s) — bronchodilator / steroid inhaler' },
+  { key: 'cpap',            label: 'CPAP / BiPAP (uses at home)' },
+];
+
+export function medLabel(key) {
+  return MEDICATIONS.find(m => m.key === key)?.label || key;
+}
+
 export const AVAILABLE_ITEMS_SCHEMA = {
   labs: [
     { key: 'cbc', label: 'CBC (Complete Blood Count)' },

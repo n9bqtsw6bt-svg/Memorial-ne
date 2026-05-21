@@ -5,37 +5,10 @@ import {
 } from '../utils/asaCalculator.js';
 import {
   getPreopRequirements, isReadyForEvaluation, AVAILABLE_ITEMS_SCHEMA,
-  getMedicationWarnings, getLabAlerts,
+  getMedicationWarnings, getLabAlerts, MEDICATIONS,
 } from '../utils/preopRequirements.js';
 
 const STEPS = ['Patient & Surgery', 'Medical History', 'Medications & History', 'Available Studies'];
-
-const MEDICATIONS = [
-  { key: 'warfarin', label: 'Warfarin (Coumadin)' },
-  { key: 'apixaban', label: 'Apixaban (Eliquis)' },
-  { key: 'rivaroxaban', label: 'Rivaroxaban (Xarelto)' },
-  { key: 'dabigatran', label: 'Dabigatran (Pradaxa)' },
-  { key: 'heparin_enox', label: 'Heparin / Enoxaparin (Lovenox)' },
-  { key: 'aspirin', label: 'Aspirin' },
-  { key: 'clopidogrel', label: 'Clopidogrel (Plavix)' },
-  { key: 'ticagrelor', label: 'Ticagrelor (Brilinta)' },
-  { key: 'insulin', label: 'Insulin' },
-  { key: 'metformin', label: 'Metformin' },
-  { key: 'sglt2', label: 'SGLT-2 inhibitor (Farxiga, Jardiance, Invokana)' },
-  { key: 'glp1', label: 'GLP-1 agonist (Ozempic, Wegovy, Victoza, Mounjaro)' },
-  { key: 'beta_blocker', label: 'Beta-blocker' },
-  { key: 'ace_arb', label: 'ACE inhibitor / ARB' },
-  { key: 'digoxin', label: 'Digoxin' },
-  { key: 'amiodarone', label: 'Amiodarone' },
-  { key: 'steroids', label: 'Chronic steroids (prednisone, etc.)' },
-  { key: 'immunosuppressant', label: 'Immunosuppressants (tacrolimus, cyclosporine, etc.)' },
-  { key: 'opioids', label: 'Opioids (hydrocodone, oxycodone, morphine, etc.)' },
-  { key: 'maoi', label: 'MAOI antidepressant' },
-  { key: 'ssri_snri', label: 'SSRI / SNRI' },
-  { key: 'lithium', label: 'Lithium' },
-  { key: 'inhaler', label: 'Inhaler(s) — bronchodilator / steroid inhaler' },
-  { key: 'cpap', label: 'CPAP / BiPAP (uses at home)' },
-];
 
 function initForm() {
   return {

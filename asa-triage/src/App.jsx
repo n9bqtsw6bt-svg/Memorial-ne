@@ -1,14 +1,25 @@
 import { useState, useCallback } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage.js';
 import { getPreopRequirements, isReadyForEvaluation } from './utils/preopRequirements.js';
+import { DEMO_PATIENTS } from './data/demoPatients.js';
 import Navigation from './components/Navigation.jsx';
 import NurseDashboard from './components/NurseDashboard.jsx';
 import NurseIntake from './components/NurseIntake.jsx';
 import TriageResult from './components/TriageResult.jsx';
 import AnesthesiologistDashboard from './components/AnesthesiologistDashboard.jsx';
 
+// Auto-load demo patients on first visit (key never set)
+const _initialPatients = (() => {
+  try {
+    const stored = localStorage.getItem('asa-triage-patients');
+    return stored !== null ? JSON.parse(stored) : DEMO_PATIENTS;
+  } catch {
+    return DEMO_PATIENTS;
+  }
+})();
+
 export default function App() {
-  const [patients, setPatients] = useLocalStorage('asa-triage-patients', []);
+  const [patients, setPatients] = useLocalStorage('asa-triage-patients', _initialPatients);
   const [view, setView] = useState('nurse-dashboard');
   const [selectedPatientId, setSelectedPatientId] = useState(null);
   const [userRole, setUserRole] = useState('nurse');
@@ -61,6 +72,7 @@ export default function App() {
   };
 
   const pendingCount = patients.filter(p => p.needsEvaluation && !p.evaluationComplete).length;
+  const isDemoMode   = patients.some(p => p.id?.startsWith('demo-'));
 
   const renderView = () => {
     switch (view) {
@@ -113,6 +125,14 @@ export default function App() {
         onNavigate={setView}
         patientCount={pendingCount}
       />
+      {isDemoMode && (
+        <div className="demo-banner">
+          <span>Demo Mode — Sample patients loaded for presentation purposes</span>
+          <button className="demo-clear-btn" onClick={() => { setPatients([]); setView('nurse-dashboard'); }}>
+            Clear Demo &amp; Start Fresh
+          </button>
+        </div>
+      )}
       <main className="main-content">
         {renderView()}
       </main>
